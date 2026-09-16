@@ -1,0 +1,240 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+*.pyd
+
+# C extensions
+*.so
+*.o
+*.a
+
+# Distribution / packaging
+.Python
+develop-eggs/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+*.whl
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.envrc
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Translations
+*.mo
+*.pot
+
+# Django / Flask / etc (general)
+*.log
+*.pot
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+instance/
+.webassets-cache
+
+# Jupyter
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+.python-version
+
+# pipenv
+Pipfile.lock
+
+# poetry
+poetry.lock
+
+# pdm
+.pdm.toml
+.pdm-python
+.pdm-build/
+
+# PEP 582
+__pypackages__/
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath
+*.sage.py
+
+# Spyder
+.spyderproject
+.spyproject
+
+# Rope
+.ropeproject
+
+# mkdocs
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre
+.pyre/
+
+# pytype
+.pytype/
+
+# Cython debug
+cython_debug/
+
+# PyCharm / JetBrains
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# VS Code
+.vscode/
+*.code-workspace
+.history/
+
+# Sublime
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# Linux
+*~
+.directory
+.Trash-*
+.nfs*
+
+# ==========================
+# PyInstaller
+# ==========================
+# Build folders (output اصلی PyInstaller)
+build/
+dist/
+# PyInstaller cache & temp
+*.manifest
+*.pyinstaller
+# فایل‌های واسط داخل build/ (اگر build/ ignore نشود)
+*.toc
+*.pkg
+*.pyz
+*.zip
+# لاگ‌های build
+warn-*.txt
+xref-*.html
+Analysis-*.toc
+EXE-*.toc
+PYZ-*.toc
+PKG-*.toc
+localpycs/
+
+# اگر می‌خواهید فایل‌های .spec را نگه دارید (سورس PyInstaller)، خط زیر را کامنت نگه دارید
+# *.spec
+
+# ==========================
+# Project specific
+# ==========================
+# فایل‌های اجرایی ساخته‌شده
+*.exe
+*.msi
+*.dmg
+
+# پوشه خروجی نهایی (شامل exe های آماده)
+Final_Proxy-host-remot/
+
+# کانفیگ حاوی IP لوکال - معمولا نباید کامیت شود
+# اگر نمونه لازم است، یک فایل proxy_config.example.txt بسازید و آن را کامیت کنید
+proxy_config.txt
+**/proxy_config.txt
+
+# لاگ‌ها و فایل‌های موقت
+*.log
+*.tmp
+*.temp
+*.bak
+*.backup
+*.old
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Secrets / keys
+*.pem
+*.key
+*.crt
+*.p12
+secrets.txt
+config.ini

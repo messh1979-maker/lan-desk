@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Remote Desktop (Web)</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        body { font-family: Arial; margin: 20px; }
+        #controls { margin-bottom: 20px; }
+        #screen { border: 1px solid #ccc; width: 800px; height: 600px; background: #222; }
+        #remote-video { width: 100%; height: 100%; object-fit: contain; }
+        button { padding: 8px 16px; margin-right: 8px; }
+        #code-display { font-size: 24px; font-weight: bold; color: #007bff; }
+    </style>
+</head>
+<body>
+    <h1>Remote Desktop</h1>
+    <div id="controls">
+        <button id="btn-host">🔴 Share Screen (Host)</button>
+        <input type="text" id="code-input" placeholder="Enter 9-digit code" maxlength="9">
+        <button id="btn-viewer">👁 Connect (Viewer)</button>
+        <span id="code-display"></span>
+    </div>
+    <div id="screen">
+        <video id="remote-video" autoplay playsinline></video>
+    </div>
+
+    <script>
+        const socket = io('http://localhost:5000');
+        const video = document.getElementById('remote-video');
+        let pc = null; // RTCPeerConnection
+        let isHost = false;
+        let myCode = null;
+
+        // ------------------- تولید کد -------------------
+        async function registerCode() {
+            const code = String(Math.floor(100000000 + Math.random() * 900000000));
+            const resp = await fetch('/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code })
+            });
+            const data = await resp.json();
+            if (data.status === 'ok') {
+                myCode = code;
+                document.getElementById('code-display').textContent = `✅ Your code: ${code}`;
+                // اطلاع به سرور که Host آماده است
+                socket.emit('host_ready', { code: myCode });
+                return true;
+            } else {
+                alert('Error: ' + data.message);
+                return false;
+            }
+        }
+
+        // ------------------- شروع اشتراک‌گذاری صفحه (Host) -------------------
+        async function startHost() {
+            if (isHost) return;
+            // درخواست مجوز اشتراک‌گذاری صفحه
+            let stream;
+            try {
+                stream = await navigator.mediaDevices.getDisplayMedia({
+                    video: { cursor: 'always' },
+                    audio: false,
+                    preferCurrentTab: true
+                });
+            } catch (e) {
+                alert('Failed to get screen: ' + e.message);
+                return;
+            }
+
+            if (await registerCode()) {
+                isHost = true;
+                // ایجاد PeerConnection
+                pc = new RTCPeerConnection({
+                    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+                });
+                pc.addStream(stream);
+                pc.onicecandidate = (e) => {
+                    if (e.candidate) {
+                        socket.emit('webrtc_signal', {
+                            target: 'viewer',
+                            code: myCode,
+                            signal: { type: 'candidate', candidate: e.candidate }
+                        });
+                    }
+                };
+                // پس از اتصال Viewer، offer ارسال می‌شود
+                socket.on('viewer_connected', async () => {
+                    const offer = await pc.createOffer();
+                    await pc.setLocalDescription(offer);
+                    socket.emit('webrtc_signal', {
+                        target: 'viewer',
+                        code: myCode,
+                        signal: { type: 'offer', sdp: offer }
+                    });
+                });
+            }
+        }
+
+        // ------------------- اتصال به عنوان Viewer -------------------
+        async function connectViewer() {
+            const code = document.getElementById('code-input').value.trim();
+            if (code.length !== 9 || !/^\d+$/.test(code)) {
+                alert('Please enter a valid 9-digit code.');
+                return;
+            }
+            // بررسی وجود کد در سرور
+            const resp = await fetch(`/get_host/${code}`);
+            const data = await resp.json();
+            if (data.status !== 'ok') {
+                alert('Invalid or expired code.');
+                return;
+            }
+            // اعلام به سرور برای پیوستن به نشست
+            socket.emit('viewer_join', { code });
+            // شروع WebRTC
+            pc = new RTCPeerConnection({
+                iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+            });
+            pc.ontrack = (event) => {
+                video.srcObject = event.streams[0];
+            };
+            pc.onicecandidate = (e) => {
+                if (e.candidate) {
+                    socket.emit('webrtc_signal', {
+                        target: 'host',
+                        code: code,
+                        signal: { type: 'candidate', candidate: e.candidate }
+                    });
+                }
+            };
+
+            // دریافت signal از Host
+            socket.on('webrtc_signal', async (msg) => {
+                if (msg.from !== 'host') return;
+                const signal = msg.signal;
+                if (signal.type === 'offer') {
+                    await pc.setRemoteDescription(new RTCSessionDescription(signal.sdp));
+                    const answer = await pc.createAnswer();
+                    await pc.setLocalDescription(answer);
+                    socket.emit('webrtc_signal', {
+                        target: 'host',
+                        code: code,
+                        signal: { type: 'answer', sdp: answer }
+                    });
+                } else if (signal.type === 'candidate') {
+                    await pc.addIceCandidate(new RTCIceCandidate(signal.candidate));
+                }
+            });
+
+            // ارسال ورودی‌ها از طریق Data Channel (اختیاری)
+            const dc = pc.createDataChannel('input');
+            dc.onopen = () => {
+                console.log('Data channel open');
+                // ارسال رویدادهای ماوس و کیبورد به Host
+                document.addEventListener('mousemove', (e) => {
+                    dc.send(JSON.stringify({ type: 'mousemove', x: e.clientX, y: e.clientY }));
+                });
+                document.addEventListener('click', (e) => {
+                    dc.send(JSON.stringify({ type: 'click', button: e.button }));
+                });
+                document.addEventListener('keydown', (e) => {
+                    dc.send(JSON.stringify({ type: 'keydown', key: e.key }));
+                });
+            };
+        }
+
+        // ------------------- رویدادهای دکمه -------------------
+        document.getElementById('btn-host').addEventListener('click', startHost);
+        document.getElementById('btn-viewer').addEventListener('click', connectViewer);
+
+        // نمایش کد در صورت ثبت موفق
+        socket.on('host_registered', (data) => {
+            document.getElementById('code-display').textContent = `✅ Code ${data.code} is live!`;
+        });
+    </script>
+</body>
+</html>
